@@ -1,0 +1,42 @@
+---
+title: "task01"
+author: "Yirun Wang"
+date: "16/08/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(naniar)
+library(data.table)
+library(ggplot2)
+library(ggmosaic)
+library(readr)
+```
+
+
+## 0. Read in datasets
+```{r}
+transac <- fread("QVI_transaction_data.csv")
+customer <- fread("QVI_purchase_behaviour.csv")
+
+# head(transac)
+```
+
+
+## 1. EDA
+
+### 1.1 Data Structures
+```{r}
+# transac -> date objects
+transac$DATE <- as.Date(transac$DATE, origin = "1899-12-30")
+```
+
+### 1.2 Text Analysis: Are these products all chips?
+```{r}
+# product name
+prod_words <- data.table(unlist(strsplit(unique(transac[, PROD_NAME]), "")))
+setnames(prod_words, 'words')
+
+```
+
