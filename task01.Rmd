@@ -321,3 +321,34 @@ dat <- merge(transac, customer, all.x = TRUE)
 dat
 ```
 
+
+
+
+# WORK ON ONE DATASET 'dat' FROM HERE ONWARDS
+
+## 0. Check for nulls
+
+No nulls. (Uncomment the code as it takes a while to run)
+
+```{r}
+# vis_miss(dat, warn_large_data = FALSE)
+```
+
+
+## 1. Task02 Prep: Export dat as csv
+
+Commented the code as it needed to be exported once only.
+
+```{r}
+# fwrite(dat, "QVI_data.csv")
+```
+
+
+
+
+
+
+
+
+
+
