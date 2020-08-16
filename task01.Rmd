@@ -14,7 +14,6 @@ library(ggmosaic)
 library(readr)
 ```
 
-
 ## 0. Read in datasets
 ```{r}
 transac <- fread("QVI_transaction_data.csv")
@@ -23,6 +22,9 @@ customer <- fread("QVI_purchase_behaviour.csv")
 # head(transac)
 ```
 
+
+
+# TRANSACTION DATASET
 
 ## 1. EDA
 
@@ -216,9 +218,54 @@ fig3
 
 ## 3. Brands
 
-###
+### 3.1 Create brand names
+```{r}
+# Extract the first words of prod_name - regex
+transac$BRAND <- gsub("([A-Za-z]+).*", "\\1", transac$PROD_NAME)
+
+# Check reasonableness of results
+unique(transac$BRAND)
+```
+
+### 3.2 Clean brand names
+```{r}
+# RRD & RED
+transac$BRAND[which(transac$BRAND == "RRD")] = "Red"
+
+# Check other brands
+unique(transac$BRAND)
+```
+
+### 3.3 Repeat 3.2 on other brand adjustments
+```{r}
+# Natural & NCC
+transac$BRAND[which(transac$BRAND == "NCC")] = "Natural"
+
+# Snbts & Sunbites
+transac$BRAND[which(transac$BRAND == "Snbts")] = "Sunbites"
+
+# Infzns & Infuzions
+transac$BRAND[which(transac$BRAND == "Infzns")] = "Infuzions"
+
+# Smith & Smiths
+transac$BRAND[which(transac$BRAND == "Smith")] = "Smiths"
+
+# Grain & GrnWves
+transac$BRAND[which(transac$BRAND == "GrnWves")] = "Grain"
+
+# Doritos & Dorito
+transac$BRAND[which(transac$BRAND == "Dorito")] = "Doritos"
+
+# WW & Woolworths (NOTE1: CANT BE 100% SURE WITHOUT METADATA)
+transac$BRAND[which(transac$BRAND == "WW")] = "Woolworths"
+
+# Check results
+unique(transac$BRAND)
+
+```
 
 
 
+# CUSTOMER DATASET
 
 
