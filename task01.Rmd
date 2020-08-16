@@ -5,7 +5,7 @@ date: "16/08/2020"
 output: html_document
 ---
 
-```{r}
+```{r, message=FALSE}
 library(tidyverse)
 library(naniar)
 library(data.table)
@@ -34,9 +34,191 @@ transac$DATE <- as.Date(transac$DATE, origin = "1899-12-30")
 
 ### 1.2 Text Analysis: Are these products all chips?
 ```{r}
-# product name
+# explore the digits and special chars
 prod_words <- data.table(unlist(strsplit(unique(transac[, PROD_NAME]), "")))
 setnames(prod_words, 'words')
 
+
+# remove digits and special chars
+prods <- gsub("[[:punct:]]", "", transac$PROD_NAME)
+prods <- gsub('[0-9]+', "", prods)
+
+transac <- transac %>% 
+  mutate(`prodname` = prods)
+
+# sort by freq
+chip_rank <- sort(table(prods), decreasing = TRUE)
 ```
+
+### 1.3 Remove salsa
+```{r}
+transac <- transac %>% 
+  mutate(`SALSA` = grepl("salsa", tolower(prodname)))
+
+transac <- transac[which(transac$`SALSA` == FALSE),]
+
+to_drop <- c("SALSA")
+transac <- transac[, !(names(transac) %in% to_drop)]
+```
+
+### 1.4 Initial Summary: Check for nulls and outliers
+
+No missing vals.
+
+Outliers
+- 200 packs of chips were purchased in a single transaction
+- 650 total sales (occurred in the same transaction)
+
+```{r}
+## missingness (NB: uncomment next line to run the code - takes a while)
+# vis_miss(transac, warn_large_data = FALSE)
+
+# outliers
+transac %>% 
+  select_if(is.numeric) %>% 
+  pivot_longer(c(PROD_QTY, TOT_SALES), names_to = "variable", values_to = "value") %>% 
+  ggplot(aes(value), x = variable) +
+  facet_wrap(~ variable, scales = "free") +
+  geom_boxplot() +
+  theme_bw(base_size = 18) +
+  theme(strip.text.x = element_text(size = 8))
+
+# max(transac$PROD_QTY)
+
+# summary: means and medians
+# transac %>% 
+#   select_if(is.numeric) %>% 
+#   pivot_longer(c(PROD_QTY, TOT_SALES), names_to = "variable", values_to = "value") %>% 
+#   group_by(variable) %>%
+#   summarise(mean = mean(value, na.rm = TRUE), median = median(value, na.rm = TRUE))
+```
+
+### 1.5.1 Filter the dataset: Pinpoint the transaction of interest
+
+Two instances in which 200 packs of chips were purchased in one go.
+- same customer (same loyalty #)
+- same store
+- same type of chips
+- different dates (autumn and winter)
+
+```{r}
+transac %>% 
+  filter(PROD_QTY == max(PROD_QTY))
+
+# transac %>% 
+#   filter(TOT_SALES == max(TOT_SALES))
+```
+
+### 1.5.2 Filter the dataset: Pinpoint the customer of interest
+
+The customer has had no other recorded transactions. Chips may be purchased for commercial purposes.
+Remove this cusomer as it does not yield insights into behaviour.
+
+```{r}
+transac %>% 
+  filter(LYLTY_CARD_NBR == "226000")
+```
+
+### 1.6 Remove outliers
+
+```{r}
+transac <- transac[!transac$LYLTY_CARD_NBR == "226000", ]
+
+# re-examine the dataset
+# max(transac$PROD_QTY)
+```
+
+### 1.7 Count the number of transactions by date
+
+Only 364 dates -> one day missing.
+
+```{r}
+transac_date <- transac %>% 
+  group_by(DATE) %>% 
+  summarise(freq = n())
+```
+
+### 1.8 Fill in the missing date
+```{r}
+# Create a sequence of unique dates from 1/7/18 to 30/6/19
+unique_dates <- list(DATE = seq(as.Date('2018-07-01'), as.Date('2019-06-30'), by=1))
+# class(unique_dates)
+
+transac_yearly = merge(x=transac_date, y=unique_dates, by="DATE", all.y = TRUE)
+
+# replace NA with 0
+# transac_yearly <- transac_yearly %>% 
+#   mutate_if(is.integer, ~replace(., is.na(.), 0))
+```
+
+### 1.9 Plot transactions over time
+```{r}
+# call theme_bw first ow previous settings changed
+
+fig1 <- transac_yearly %>% 
+  ggplot(aes(x = DATE, y = freq)) +
+  geom_line() +
+  labs(x = "Day", y = "Number of transactions", title = "Transactions over time") +
+  scale_x_date(breaks = "1 month") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, vjust = 0.5))
+
+fig1
+```
+
+### 2.0 December transactions
+
+Increase -> ZERO on Xmas day due to the public holiday closure -> Decrease.
+
+```{r}
+fig2 <- transac_yearly[months(transac_yearly$DATE) %in% month.name[12],] %>% 
+  ggplot(aes(x = DATE, y = freq)) +
+  geom_line() +
+  labs(x = "Day", y = "Number of transactions", title = "Transactions over time") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, vjust = 0.5))
+
+fig2
+```
+
+
+## 2. Pack Size
+
+### 2.1 Extract the digits
+```{r}
+# !!! parse_number
+
+transac <- transac %>% 
+  mutate(`PACK SIZE` = parse_number(PROD_NAME))
+
+# Check outputs
+c(max(transac$`PACK SIZE`), min(transac$`PACK SIZE`))
+```
+
+### 2.2 Plot pack size
+```{r}
+transac_pack <- transac %>% 
+  group_by(`PACK SIZE`) %>% 
+  summarise(freq = n())
+
+# max(transac_pack$freq)
+
+fig3 <- transac_pack %>% 
+  ggplot(aes(x=`PACK SIZE`, y=freq)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Pack Size", y = "Number of transactions", title = "Transactions by pack size") +
+  theme_bw()
+
+fig3
+```
+
+## 3. Brands
+
+###
+
+
+
+
 
