@@ -268,4 +268,56 @@ unique(transac$BRAND)
 
 # CUSTOMER DATASET
 
+## 1. Tidying up the dataset: Missingness, Outliers
+
+No missing values.
+No outliers because no numeric data.
+
+```{r}
+# missingness
+# vis_miss(customer, warn_large_data = FALSE)
+```
+
+## 2.1 Customers by lifestage
+
+```{r}
+# unique(customer$LIFESTAGE)
+# unique(customer$PREMIUM_CUSTOMER)
+
+lifestage <- customer %>% 
+  group_by(LIFESTAGE) %>% 
+  summarise(freq = n())
+
+fig4 <- lifestage %>% 
+  ggplot(aes(x=LIFESTAGE, y=freq)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Lifestage", y = "Number of customers", title = "Customers by lifestage") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+
+fig4
+```
+
+## 2.2 Customers by premiumness
+```{r}
+premium <- customer %>% 
+  group_by(PREMIUM_CUSTOMER) %>% 
+  summarise(freq = n())
+
+fig5 <- premium %>% 
+  ggplot(aes(x=PREMIUM_CUSTOMER, y=freq)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Customer Type", y = "Number of customers", title = "Customers by premiumness") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+
+fig5
+```
+
+
+# MERGE TRANSACTION TO CUSTOMER
+```{r}
+dat <- merge(transac, customer, all.x = TRUE)
+dat
+```
 
