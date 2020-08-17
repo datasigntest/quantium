@@ -345,9 +345,119 @@ Commented the code as it needed to be exported once only.
 
 
 
+# DATA ANALYSIS on CUSTOMER
+
+## 1. Who spends the most on chips (total sales), describing customers by lifestage and how premium their general purchasing behaviour is - Which customer segment contribute most to chip sales?
+
+Mainstream young customers & Budget older customers.
+```{r}
+# customer_lifeprem
+```
+
+```{r fig.width=10, fig.align="center"}
+# Total sales by LIFESTAGE and PREMIUM_CUSTOMER
+customer_lifeprem <- dat %>% 
+  mutate(SEGMENT = paste(LIFESTAGE, PREMIUM_CUSTOMER)) %>% 
+  select(TOT_SALES, SEGMENT) %>% 
+  group_by(SEGMENT) %>% 
+  summarise(TOTAL = sum(TOT_SALES)) %>% 
+  arrange(desc(TOTAL))
+
+# Plot
+fig6 <- customer_lifeprem %>% 
+  ggplot(aes(x=SEGMENT, y=TOTAL)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Customer Segment", y = "Total Sales", title = "Total sales by lifestage and premiumness") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+
+fig6
+```
+
+## 1.1 Average number of units per customer
+
+Older & young families.
+
+```{r fig.width=10, fig.align="center"}
+# Average number of units per customer by LIFESTAGE and PREMIUM_CUSTOMER
+unit_pc <- dat %>% 
+  mutate(SEGMENT = paste(LIFESTAGE, PREMIUM_CUSTOMER)) %>% 
+  select(PROD_QTY, SEGMENT) %>% 
+  group_by(SEGMENT) %>% 
+  summarise(AVERAGE = mean(PROD_QTY)) %>% 
+  arrange(desc(AVERAGE))
+
+# Plot
+fig7 <- unit_pc %>% 
+  ggplot(aes(x=SEGMENT, y=AVERAGE)) +
+  geom_bar(stat="identity") +
+  labs(x = "Customer Segment", y = "Number of units", title = "Number of units per customer by lifestage and premiumness") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+
+fig7
+
+```
+
+## 1.3 Average price per unit chips
+
+Mainstream young and midage singles/couples paid the highest per unit price for chips. Premium customers more likely buy healthy alternatives, so consume less chips.
+
+The price differences are not large. -> Check if statistially significant.
+
+```{r fig.width=10, fig.align="center"}
+price_pu <- dat %>% 
+  mutate(SEGMENT = paste(LIFESTAGE, PREMIUM_CUSTOMER), UNIT_PRICE = TOT_SALES/PROD_QTY) %>% 
+  select(UNIT_PRICE, SEGMENT) %>% 
+  group_by(SEGMENT) %>% 
+  summarise(AVG_PRICE = mean(UNIT_PRICE)) %>% 
+  arrange(desc(AVG_PRICE))
+
+# Plot
+fig8 <- price_pu %>% 
+  ggplot(aes(x=SEGMENT, y=AVG_PRICE)) +
+  geom_bar(stat="identity") +
+  labs(x = "Customer Segment", y = "Price per unit", title = "Average price per unit chips by lifestage and premiumness") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+
+fig8
+
+```
+
+## 1.4 t-test between average price perunit for mainstream vs premium and budget midage and young singles/couples
+
+Two-sample t-test.
+- select midage and young singles/couples
+- mainstream vs premium + budget
+
+The t-test results in a p-value of 0.81. As the p-value is large, there is no evidence that suggests there is a difference in average price per unit. In other words, the unit price for mainstream, young and midage singles/couples are not significantly higher than that of budget & premium young and midage singles/couples.
+
+```{r}
+# unique(price_pu$SEGMENT)
+
+# Two samples: young and midage
+young <- price_pu %>% 
+  filter(SEGMENT %in% c("YOUNG SINGLES/COUPLES Mainstream", "YOUNG SINGLES/COUPLES Premium", "YOUNG SINGLES/COUPLES Budget"))
+
+midage <- price_pu %>% 
+  filter(SEGMENT %in% c("MIDAGE SINGLES/COUPLES Mainstream", "MIDAGE SINGLES/COUPLES Premium", "MIDAGE SINGLES/COUPLES Budget"))
 
 
+# t-test
+t.test(young$AVG_PRICE, midage$AVG_PRICE, alternative = "two.sided")
 
+```
+
+
+## 2. Mainstream young singles/couples - Do they tend to buy a particular brand of chips.
+
+```{r fig.align="center"}
+brand_midyoung <- dat %>% 
+  mutate(SEGMENT = paste(LIFESTAGE, PREMIUM_CUSTOMER)) %>% 
+  select(SEGMENT, BRAND)
+
+```
 
 
 
